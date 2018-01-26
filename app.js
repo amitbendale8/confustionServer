@@ -11,6 +11,24 @@ var dishRouter = require('./routes/dishRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var promoRouter = require('./routes/promoRouter');
 
+const mongoose = require('mongoose');
+mongoose.Promise = require('bluebird');
+
+const Dishes = require('./models/dishes')
+
+const url = "mongodb://localhost:27017/conFusion";
+const connect = mongoose.connect(url, {
+  useMongoClient: true
+  
+});
+
+
+connect.then((db)=>{
+  console.log("Connected succesfully to server");
+},(err)=>{
+  console.log('Error in connecting to server');
+})
+
 var app = express();
 
 // view engine setup
