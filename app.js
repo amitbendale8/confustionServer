@@ -12,6 +12,8 @@ var users = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var promoRouter = require('./routes/promoRouter');
+var passport = require('passport');
+var authenticate = require('./authenticate')
 
 const mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
@@ -52,6 +54,9 @@ app.use(session({
   store: new FileStore()
 }))
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', index);
 app.use('/users', users);
 
@@ -60,21 +65,16 @@ function auth(req,res,next){
   console.log("AUthorizing...")
   console.log(req.session);
 
-  if(!req.session.user){
+  if(!req.user){
       var err = new Error("You are not authenticated");
       res.setHeader('WWW-Authenticate','Basic');
       err.status = 403;
       return next(err);
   }  
   else {
-    if(req.session.user === 'authenticated'){
-      next();
-    }else{
-      var err = new Error("You are not authenticated");
-      res.setHeader('WWW-Authenticate','Basic');
-      err.status = 403;
-      return next(err);
-    }
+    
+    return next();
+   
   }
   
 
