@@ -19,7 +19,11 @@ dishRouter.route('/')
         },(err)=>next(err))
         .catch((err)=>next(err))
 })
-.post(authenticate.verfiyUser,(req,res,next)=>{
+.post(authenticate.verfiyUser,
+    authenticate.verifyAdmin,
+    (req,res,next)=>{
+    console.log("inside post: ",req.user);
+
     Dishes.create(req.body)
         .then((dish)=>{
             console.log('Dish created: ',dish);
@@ -29,11 +33,15 @@ dishRouter.route('/')
         },(err)=>next(err))
         .catch((err)=>next(err))
 })
-.put(authenticate.verfiyUser,(req,res,next)=>{
+.put(authenticate.verfiyUser,
+    authenticate.verifyAdmin,
+    (req,res,next)=>{
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
-.delete(authenticate.verfiyUser,(req,res,next)=>{
+.delete(authenticate.verfiyUser,
+        authenticate.verifyAdmin,
+        (req,res,next)=>{
     Dishes.remove({})
         .then((resp)=>{
             res.statusCode = 200;
@@ -55,11 +63,15 @@ dishRouter.route('/:dishId')
     },(err)=>next(err))
     .catch((err)=>next(err))
 })
-.post(authenticate.verfiyUser,(req,res,next)=>{
+.post(authenticate.verfiyUser,
+    authenticate.verifyAdmin,
+    (req,res,next)=>{
     res.statusCode = 403;
     res.end('POS operation not supported on /dishes/:'+req.params.dishId);
 })
-.put(authenticate.verfiyUser,(req,res,next)=>{
+.put(authenticate.verfiyUser,
+    authenticate.verifyAdmin,
+    (req,res,next)=>{
     Dishes.findByIdAndUpdate(req.params.dishId,{
         $set: req.body
     },{ new: true})
@@ -71,7 +83,9 @@ dishRouter.route('/:dishId')
     },(err)=>next(err))
     .catch((err)=>next(err))
 })
-.delete(authenticate.verfiyUser,(req,res,next)=>{
+.delete(authenticate.verfiyUser,
+    authenticate.verifyAdmin,
+    (req,res,next)=>{
     Dishes.findByIdAndRemove(req.params.dishId)
     .then((resp)=>{
         res.statusCode = 200;
@@ -130,7 +144,9 @@ dishRouter.route('/:dishId/comments')
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes'+req.params.dishId+'/comments');
 })
-.delete(authenticate.verfiyUser,(req,res,next)=>{
+.delete(authenticate.verfiyUser,
+    authenticate.verifyAdmin,
+    (req,res,next)=>{
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
@@ -219,6 +235,14 @@ dishRouter.route('/:dishId/comments/:commentId')
     .then((dish) => {
         console.log("inside delete");
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
+            console.log("comment author",dish.comments.id(req.params.commentId).author._id);
+            console.log("User id",req.user._id)
+            if(dish.comments.id(req.params.commentId).author._id 
+                !== req.user._id){
+                err = new Error('Why you want to delete comment which you have not added.');
+                err.status = 401;
+                return next(err);
+            }
             dish.comments.id(req.params.commentId).remove();
             dish.save()
             .then((dish) => {
